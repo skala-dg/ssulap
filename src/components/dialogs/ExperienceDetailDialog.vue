@@ -15,6 +15,7 @@ const detailFields = [
   ['result', '결과'],
   ['lesson', '배운 점'],
   ['memo', '협업 회고'],
+  ['overview', '경험 개요'],
 ]
 
 function handleEdit() {

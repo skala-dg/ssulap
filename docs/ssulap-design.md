@@ -1,12 +1,12 @@
 # 써랍 데이터·API 설계서
 
-작성일: 2026-09-16 · 버전: 1.0 · 실행 범위: 로컬 전용
+작성일: 2026-09-16 · 버전: 1.2 · 실행 범위: 로컬 전용
 
 ## 1. 범위와 현재 상태
 
 써랍은 신입 취업 준비생이 기본 이력과 경험을 정리하고, 회사별 자소서를 직접 작성할 때 재사용하는 개인 기록 서비스다. 인턴 및 기타 근무 경력을 포함한다. 자소서 답변 자동 생성은 제공하지 않는다.
 
-이번 산출물은 ① 엔터티·필드·관계·삭제 규칙 ② DBML ③ 화면별 API 및 요청·응답 명세다. 백엔드, DB 인스턴스, 로그인, 실제 AI 연결은 구현하지 않았다. 현재 Vue는 메모리 예시 데이터로 동작하며 새로고침하면 초기화된다. 기존 UI 코드는 변경하지 않았다.
+이번 산출물은 ① 엔터티·필드·관계·삭제 규칙 ② DBML ③ 화면별 API 및 요청·응답 명세다. 백엔드, DB 인스턴스, 로그인, 실제 AI 연결은 구현하지 않았다. 현재 Vue는 예시 데이터와 브라우저 `localStorage`를 사용해 새로고침 후에도 작성 내용을 복원한다. 이는 서버 영속 저장이 아니라 현재 기기에만 남는 임시 저장이다.
 
 - 데이터 기준: `ssulap-DB.dbml`
 - API 기준: `ssulap-API.yml` (OpenAPI 3.0.3)
@@ -18,10 +18,10 @@
 
 ## 2. 설계 결정
 
-1. 12개 테이블로 구성한다. 단순 분류마다 테이블을 추가하지 않고, 여러 건을 관리하거나 실제 관계를 갖는 정보만 분리한다.
+1. 13개 테이블로 구성한다. 단순 분류마다 테이블을 추가하지 않고, 여러 건을 관리하거나 실제 관계를 갖는 정보만 분리한다.
 2. 학력·자격증·어학·경력은 복수 등록한다. 병역·보훈·장애사항은 사용자별 단일 프로필이다.
 3. 지원 건 하나가 자소서 한 묶음이다. 회사·직무·지원 시기가 같아도 재지원 또는 별도 지원 건을 허용한다. 회사명은 외부 기업 DB 없이 문자열로 보관한다.
-4. 문항과 답변은 1:1이므로 한 테이블로 묶고, 답변 버전 이력은 만들지 않는다.
+4. 문항과 현재 답변은 한 테이블로 묶고, 사용자가 직접 저장한 답변 이력은 question_versions에 불변 스냅샷으로 보관한다. 자동 저장은 버전을 만들지 않는다.
 5. 경험에는 경력을 선택적으로 연결한다. 경험–태그, 문항–경험은 다대다 연결 테이블을 둔다.
 6. 협업 회고는 경험의 선택 텍스트 필드다. 팀원 계정·실명·평점·후기 테이블은 만들지 않는다.
 7. 로컬 개발에서는 서버가 고정 사용자 1을 선택한다. 클라이언트는 userId를 보내지 않는다. 본인 소유 검증은 서비스 계층에서 유지하고, 로그인 구현은 후속 범위로 둔다. 이는 인증이 구현됐다는 의미가 아니다.
@@ -42,6 +42,7 @@
 | experience_tags | 경험–태그 연결 | N:M, 복합 PK |
 | applications | 지원 건·자소서 묶음 | 사용자 1:N |
 | essay_questions | 문항·현재 답변 | 지원 건 1:N |
+| question_versions | 문항 답변 스냅샷 | 문항 1:N, 상태별 개수 제한 |
 | question_experiences | 참고 경험 연결 | 문항–경험 N:M, 복합 PK |
 
 ```mermaid
@@ -58,6 +59,7 @@ erDiagram
     experiences ||--o{ experience_tags : classified
     tags ||--o{ experience_tags : labels
     applications ||--o{ essay_questions : contains
+    essay_questions ||--o{ question_versions : snapshots
     essay_questions ||--o{ question_experiences : references
     experiences ||--o{ question_experiences : reused
 ```
@@ -86,7 +88,7 @@ erDiagram
 | 병역 미입력 / 해당 없음 / 미필 / 복무 중 / 군필 / 면제 | UNSPECIFIED / NOT_APPLICABLE / NOT_SERVED / SERVING / COMPLETED / EXEMPT |
 | 보훈·장애 미입력 / 대상 / 비대상 | UNSPECIFIED / YES / NO |
 
-작성 상태는 사용자 정리용 표시다. 모든 상태 사이 이동을 허용하며 답변이 비어 있어도 상태 변경은 가능하다. SUBMITTED는 외부 기업에 전송했다는 시스템 증명이 아니다.
+자소서 상태는 DRAFT ↔ COMPLETED ↔ SUBMITTED 인접 전이만 허용한다. COMPLETED는 모든 문항이 명시적으로 완료되고 제한 이하여야 한다. 문항 완료는 답변 유무에서 추론하지 않고 사용자가 버튼으로 결정한다. SUBMITTED는 외부 기업에 전송했다는 시스템 증명이 아니다.
 
 ### 프로필 조건
 
@@ -108,6 +110,7 @@ erDiagram
 - CRLF/CR을 LF로 정규화한 후 Unicode code point 수를 센다. 공백·줄바꿈 포함. 향후 Java는 codePointCount, Vue는 Array.from(answer).length를 사용한다. 현재 Vue의 문자열 length는 이에 맞게 교체해야 한다.
 - 자소서 내 position은 1~1,000이며 중복 불가. 추가 시 max(position)+1, 삭제 시 기존 순서는 유지한다. 순서 교환 기능은 범위 밖이며 충돌은 409다.
 - 자소서 생성 시 빈 문항 1개를 함께 생성한다. 이후 마지막 문항 삭제는 허용하므로 UI에 빈 문항 추가 상태가 필요하다.
+- 문항 완료 상태는 DRAFT/COMPLETED다. 완료 후 문항·답변·제한을 수정하면 DRAFT로 되돌리고 사용자가 다시 완료해야 한다.
 
 ## 5. 삭제 규칙과 트랜잭션
 
@@ -117,6 +120,10 @@ erDiagram
 | 경험 삭제 | 태그 연결·문항 연결 삭제, 태그 원본과 답변 유지 | 경험 + 두 연결 테이블 |
 | 지원 건 삭제 | 문항과 참고 경험 연결 삭제, 경험 원본 유지 | 지원 건 + 문항 + 연결 |
 | 문항 삭제 | 참고 연결 삭제, 경험 원본 유지 | 문항 + 연결 |
+| 자소서 작성 완료 | 완료 버전 생성, 제출 버전 1개·완료 버전·최근 작업 버전 5개 보관 | 상태 변경 + 버전 생성·정리 |
+| 자소서 제출 완료 | 제출 버전 생성 후 해당 버전 1개만 보관 | 상태 변경 + 버전 생성·정리 |
+| 과거 버전 복원 | 선택 버전을 현재 초안에 적용하고 완료 상태를 DRAFT로 변경 | 현재 문항 갱신 |
+| 직접 저장 버전 삭제 | MANUAL 버전만 삭제, 완료본·제출본은 보존 | 단일 버전 삭제 |
 | 경험 등록·수정 | 필드 저장 + 태그 생성/재사용 + 연결 대체 | 전체 작업 하나 |
 | 지원 건 생성 | 지원 정보 + 빈 첫 문항 | 전체 작업 하나 |
 | 참고 경험 연결 | 문항·경험의 본인 소유 확인 후 중복 없이 저장 | 한 연결 작업 |
@@ -129,7 +136,7 @@ erDiagram
 - 같은 참고 연결의 PUT/DELETE는 멱등이며 204. 다만 양쪽 원본 리소스가 존재하고 본인 소유인지는 확인한다.
 - 문항 순서 유일성 위반은 409. 태그 이름 동시 생성 충돌은 기존 행을 재조회해 재사용한다.
 - API 요청 단위로만 트랜잭션을 묶는다. 서로 다른 기본 이력 구역이나 지원 정보와 답변 저장은 별도 요청이며 부분 성공을 UI에서 구분한다.
-- 파일 삭제/외부 API/AI 호출을 CRUD 트랜잭션에 포함하지 않는다. 자동 저장·동시 편집·낙관적 잠금은 후속 범위이며 MVP는 마지막 성공 저장이 최종 값이다.
+- 파일 삭제/외부 API/AI 호출을 CRUD 트랜잭션에 포함하지 않는다. 자동 저장은 마지막 입력 후 2초 동안 추가 변경이 없을 때 현재 초안을 덮어쓰는 디바운스 방식이며 버전을 생성하지 않는다. 화면 이동 시에는 즉시 저장한다. 동시 편집·낙관적 잠금은 후속 범위다.
 
 ## 6. 화면과 API의 연결
 
@@ -140,7 +147,7 @@ erDiagram
 | 경력 | careers | /careers CRUD |
 | 경험 | experiences + tags | /experiences CRUD, GET /tags |
 | 보관함 | applications | /applications CRUD, q/status 필터 |
-| 자소서 작성 | applications + essay_questions | GET /applications/{id}, 문항 CRUD |
+| 자소서 작성 | applications + essay_questions + question_versions | GET /applications/{id}, 문항 CRUD, 완료·상태·버전 API |
 | 참고 경험 패널 | experiences + question_experiences | 경험 목록/상세, 연결 PUT/DELETE |
 | 추천 패널 | 경험·태그 기반 계약 | POST /experience-recommendations (확장) |
 
@@ -162,7 +169,7 @@ erDiagram
 | essays의 중첩 questions | applications + essay_questions | 상세 조회 결과를 편집 상태에 반영 |
 | 한국어 상태 값 | 영문 enum | 화면 라벨과 API 값 매핑 |
 | answer.length | 서버 계산 characterCount | 코드 포인트 기준으로 통일 |
-| 즉시 Vue 상태 변경 | 편집 초안 → 저장 성공 후 반영 | 실패 시 입력 보존, 미저장 이동 경고 |
+| Vue 상태 + localStorage 2초 디바운스 자동 저장 | PUT 문항 초안 + 별도 버전·상태 API | 현재는 같은 저장·보관 정책을 브라우저에서 시연, 추후 API 성공 기준으로 전환 |
 | 경험 삭제만 제공 | 경력·지원·문항 삭제도 설계 | 확인창과 빈 상태 추가 |
 | 태그 비교 추천 | 확장 API는 미구현 시 501 | 실제 AI 또는 TAG_MATCH 모드 표시 |
 
@@ -175,7 +182,7 @@ POST /api/v1/applications
 Content-Type: application/json
 ```
 ```json
-{"companyName":"예시 기업","jobTitle":"백엔드 개발","applicationPeriod":"2026 하반기","status":"DRAFT"}
+{"companyName":"예시 기업","jobTitle":"백엔드 개발","applicationPeriod":"2026 하반기"}
 ```
 
 성공 응답 (201):

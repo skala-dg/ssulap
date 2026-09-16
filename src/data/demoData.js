@@ -10,6 +10,7 @@ export const createDemoExperiences = () => [
     result: '합의한 필수 기능을 발표 일정에 맞춰 완성했습니다.',
     lesson: '의견을 설득하기 전에 서로의 우선순위를 이해하는 것이 중요했습니다.',
     memo: '디자인 담당자의 우려를 구체적으로 듣고 나니 논의가 수월해졌습니다.',
+    overview: '교내 서비스 개발 프로젝트에서 팀원들과 요구사항을 정리하고 핵심 화면을 구현했습니다. 디자인 완성도와 개발 일정 사이의 균형을 맞추는 과정을 경험했습니다.',
     career: '',
   },
   {
@@ -23,6 +24,7 @@ export const createDemoExperiences = () => [
     result: '팀이 같은 기준으로 자료를 점검할 수 있게 됐습니다.',
     lesson: '작은 불편을 관찰하는 것이 개선의 출발점입니다.',
     memo: '동료가 자주 확인하는 항목을 먼저 물어봤습니다.',
+    overview: '인턴 근무 중 반복되는 운영 자료 점검 과정을 관찰하고, 팀이 함께 사용할 수 있는 공통 확인 양식을 제안한 경험입니다.',
     career: '예시 기업',
   },
   {
@@ -36,6 +38,7 @@ export const createDemoExperiences = () => [
     result: '예정된 일정에 행사를 마쳤습니다.',
     lesson: '진행 상황을 공유하는 과정이 중요했습니다.',
     memo: '',
+    overview: '동아리 신규 회원을 위한 교내 행사를 처음부터 마무리까지 기획하고 운영했습니다.',
     career: '',
   },
 ]
@@ -60,12 +63,18 @@ export const createDemoApplications = () => [
     role: '서비스 개발 인턴',
     season: '2026 하반기',
     status: '작성 중',
+    updatedAt: '2026-09-16T05:20:00.000Z',
     questions: [
       {
+        id: 1,
+        position: 1,
         text: '협업을 통해 문제를 해결한 경험을 알려주세요.',
         limit: 700,
         answer: '',
         experienceIds: [],
+        completionStatus: 'DRAFT',
+        completedAt: null,
+        versions: [],
       },
     ],
   },
@@ -74,13 +83,19 @@ export const createDemoApplications = () => [
     company: '샘플 테크',
     role: '프론트엔드 개발',
     season: '2026 하반기',
-    status: '작성 완료',
+    status: '작성 중',
+    updatedAt: '2026-09-15T08:10:00.000Z',
     questions: [
       {
+        id: 2,
+        position: 1,
         text: '지원 직무와 관련된 경험을 소개해주세요.',
         limit: 1000,
         answer: '',
         experienceIds: [],
+        completionStatus: 'DRAFT',
+        completedAt: null,
+        versions: [],
       },
     ],
   },

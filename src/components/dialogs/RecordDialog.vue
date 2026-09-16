@@ -81,6 +81,15 @@ const experienceFields = [
             ></textarea>
           </label>
           <label>
+            경험 개요
+            <small class="field-help">경험의 전체 맥락, 사용 기술, 진행 방식을 자유롭게 정리하세요.</small>
+            <textarea
+              v-model="draft.overview"
+              class="experience-overview-input"
+              placeholder="예: 교내 급식 서비스를 개발한 프로젝트입니다. C#과 JavaScript로 클라이언트와 서버를 구현했습니다."
+            ></textarea>
+          </label>
+          <label>
             태그
             <input v-model="draft.tagText" placeholder="협업, 소통 (쉼표로 구분)" />
           </label>

@@ -1,6 +1,7 @@
 <script setup>
 import { ChevronRight, FilePenLine, Plus, Search } from 'lucide-vue-next'
 import { useWorkspace } from '../composables/useWorkspace.js'
+import { formatSavedAt, getApplicationProgress } from '../utils/applicationMetrics.js'
 
 const { query, filteredApplications, newApplication, openApplication } = useWorkspace()
 </script>
@@ -34,6 +35,29 @@ const { query, filteredApplications, newApplication, openApplication } = useWork
         <small>{{ application.season }}</small>
         <h2>{{ application.company }}</h2>
         <p>{{ application.role }}</p>
+        <div class="application-progress">
+          <div class="progress-label">
+            <span>
+              {{ getApplicationProgress(application).completed }} /
+              {{ getApplicationProgress(application).total }}문항 작성
+            </span>
+            <span>{{ getApplicationProgress(application).percent }}%</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <span :style="{ width: `${getApplicationProgress(application).percent}%` }"></span>
+          </div>
+          <div class="application-meta">
+            <span>{{ getApplicationProgress(application).totalCharacters.toLocaleString() }}자</span>
+            <span>경험 {{ getApplicationProgress(application).connectedExperiences }}개</span>
+            <span v-if="getApplicationProgress(application).empty">
+              빈 문항 {{ getApplicationProgress(application).empty }}개
+            </span>
+            <span v-if="getApplicationProgress(application).overLimit" class="meta-error">
+              초과 {{ getApplicationProgress(application).overLimit }}개
+            </span>
+            <span>최근 수정 {{ formatSavedAt(application.updatedAt) }}</span>
+          </div>
+        </div>
       </div>
       <span class="pill">{{ application.status }}</span>
       <ChevronRight />

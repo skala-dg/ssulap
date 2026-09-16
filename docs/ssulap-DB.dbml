@@ -120,6 +120,7 @@ Table experiences {
   result text
   lesson text
   collaboration_memo text
+  overview text
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
   indexes {
@@ -161,7 +162,7 @@ Table applications {
   indexes {
     user_id
   }
-  Note: "회사/직무/시기 조합 중복 허용. 작성 상태는 사용자 표시이며 실제 외부 제출이 아님."
+  Note: "회사/직무/시기 조합 중복 허용. 상태는 DRAFT ↔ COMPLETED ↔ SUBMITTED 순서로 전환하며 실제 외부 제출 여부가 아니라 사용자 관리용 표시다."
   checks {
     `status IN ('DRAFT','COMPLETED','SUBMITTED')`
   }
@@ -174,6 +175,8 @@ Table essay_questions {
   answer text [not null, default: '']
   character_limit int [not null, default: 700]
   position int [not null]
+  completion_status varchar(30) [not null, default: 'DRAFT', note: 'Allowed: DRAFT, COMPLETED']
+  completed_at timestamptz
   created_at timestamptz [not null, default: `now()`]
   updated_at timestamptz [not null, default: `now()`]
   indexes {
@@ -183,8 +186,33 @@ Table essay_questions {
     `character_limit >= 1 AND character_limit <= 20000`
     `position >= 1 AND position <= 1000`
     `char_length(answer) <= 30000`
+    `completion_status IN ('DRAFT','COMPLETED')`
+    `(completion_status = 'COMPLETED') = (completed_at IS NOT NULL)`
   }
-  Note: '초안은 문항/답변 공백 허용. 제한 초과도 30000자 이내 저장 허용. 표시 글자 수는 계산값.'
+  Note: '초안은 문항/답변 공백 허용. 제한 초과도 30000자 이내 저장 허용. 완료는 명시적 사용자 동작이며 답변 수정 시 DRAFT로 돌아간다.'
+}
+
+Table question_versions {
+  id bigint [pk, increment]
+  question_id bigint [not null]
+  version_number int [not null]
+  version_kind varchar(30) [not null, note: 'Allowed: MANUAL, COMPLETED, SUBMITTED']
+  prompt varchar(2000) [not null]
+  answer text [not null]
+  character_limit int [not null]
+  experience_ids jsonb [not null, default: '[]']
+  created_at timestamptz [not null, default: `now()`]
+  indexes {
+    (question_id, version_number) [unique]
+    (question_id, created_at)
+  }
+  checks {
+    `version_number >= 1`
+    `version_kind IN ('MANUAL','COMPLETED','SUBMITTED')`
+    `character_limit >= 1 AND character_limit <= 20000`
+    `char_length(answer) <= 30000`
+  }
+  Note: '자동 저장은 버전을 만들지 않는다. DRAFT는 제출 버전 1개와 최근 작업 버전 20개, COMPLETED는 제출 버전 1개·완료 버전·최근 작업 버전 5개, SUBMITTED는 최종 제출 버전 1개만 보관한다.'
 }
 Table question_experiences {
   question_id bigint [not null]
@@ -209,5 +237,6 @@ Ref: experience_tags.experience_id > experiences.id [delete: cascade]
 Ref: experience_tags.tag_id > tags.id [delete: cascade]
 Ref: applications.user_id > users.id [delete: cascade]
 Ref: essay_questions.application_id > applications.id [delete: cascade]
+Ref: question_versions.question_id > essay_questions.id [delete: cascade]
 Ref: question_experiences.question_id > essay_questions.id [delete: cascade]
 Ref: question_experiences.experience_id > experiences.id [delete: cascade]

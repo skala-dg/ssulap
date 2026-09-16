@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 써랍 API 설계 명세
-  version: 1.0.0
+  version: 1.2.0
   description: 설계 산출물이며 백엔드는 아직 구현되지 않았습니다. 기본 CRUD는 구현 예정, 경험 추천은 확장 계약입니다. 로컬 개발용 고정 사용자만 사용하며 인증 스키마는 범위
     밖입니다. 본인 데이터에만 접근하며 요청 body에 userId는 받지 않습니다. 시간 응답은 UTC ISO-8601, 화면 표시는 Asia/Seoul. PUT은 전체 대체이며 선택값은
     null로 보냅니다. 단일 사용자 로컬 시연만 허용하고 인증 없는 외부 공개 운영은 범위 밖입니다.
@@ -18,6 +18,7 @@ tags:
   - name: 경험
   - name: 자소서
   - name: 문항
+  - name: 버전
   - name: 추천
 paths:
   /me:
@@ -726,7 +727,7 @@ paths:
         - 경험
       summary: 경험 목록 조회
       operationId: get__experiences
-      description: 본인 데이터 전체 목록. 최신 수정순(updatedAt DESC, id DESC). 페이지네이션은 MVP 범위 밖. q는 제목·상황·태그명 검색.
+      description: 본인 데이터 전체 목록. 최신 수정순(updatedAt DESC, id DESC). 페이지네이션은 MVP 범위 밖. q는 제목·상황·경험 개요·태그명 검색.
       x-implementation-status: planned-not-implemented
       responses:
         "200":
@@ -793,6 +794,7 @@ paths:
               result: 발표 일정에 맞춰 필수 기능을 완성했습니다.
               lesson: 상대의 우선순위를 이해하는 것이 중요했습니다.
               collaborationMemo: 디자인 담당자의 우려를 먼저 들었습니다.
+              overview: 교내 서비스 개발 프로젝트에서 요구사항을 정리하고 핵심 화면을 구현했습니다.
               tags:
                 - 협업
                 - 소통
@@ -874,6 +876,7 @@ paths:
               result: 발표 일정에 맞춰 필수 기능을 완성했습니다.
               lesson: 상대의 우선순위를 이해하는 것이 중요했습니다.
               collaborationMemo: 디자인 담당자의 우려를 먼저 들었습니다.
+              overview: 교내 서비스 개발 프로젝트에서 요구사항을 정리하고 핵심 화면을 구현했습니다.
               tags:
                 - 협업
                 - 소통
@@ -949,7 +952,7 @@ paths:
         - 자소서
       summary: 자소서 등록
       operationId: post__applications
-      description: 지원 건과 빈 문항 1개(position=1, limit=700)를 한 트랜잭션으로 생성.
+      description: 지원 건을 DRAFT 상태로 만들고 빈 문항 1개(position=1, limit=700)를 한 트랜잭션으로 생성. 상태는 요청으로 받지 않음.
       x-implementation-status: planned-not-implemented
       responses:
         "201":
@@ -973,6 +976,8 @@ paths:
                     answer: ""
                     characterLimit: 700
                     position: 1
+                    completionStatus: DRAFT
+                    completedAt: null
                     characterCount: 0
                     overLimit: false
                     experienceIds: []
@@ -992,7 +997,6 @@ paths:
               companyName: 예시 기업
               jobTitle: 백엔드 개발
               applicationPeriod: 2026 하반기
-              status: DRAFT
   /applications/{id}:
     get:
       tags:
@@ -1029,7 +1033,7 @@ paths:
         - 자소서
       summary: 자소서 수정
       operationId: put__applications__id
-      description: 모든 쓰기 속성을 보내는 전체 대체 저장. 누락은 400. 다른 사용자 소유는 404. 지원 건 수정은 소속 문항을 변경하지 않음.
+      description: 회사·직무·지원 시기를 전체 대체 저장. 상태는 변경하지 않으며 /applications/{id}/status를 사용. 누락은 400. 다른 사용자 소유는 404.
       x-implementation-status: planned-not-implemented
       responses:
         "200":
@@ -1064,7 +1068,6 @@ paths:
               companyName: 예시 기업
               jobTitle: 백엔드 개발
               applicationPeriod: 2026 하반기
-              status: DRAFT
     delete:
       tags:
         - 자소서
@@ -1092,6 +1095,47 @@ paths:
             format: int64
             minimum: 1
             maximum: 9007199254740991
+  /applications/{id}/status:
+    patch:
+      tags:
+        - 자소서
+      summary: 자소서 상태 전환
+      operationId: patch__applications__id__status
+      description: DRAFT ↔ COMPLETED ↔ SUBMITTED 인접 전이만 허용. COMPLETED는 모든 문항이 완료되고 제한 이하여야 한다. COMPLETED 전환은 완료 버전을 만들고 최근 작업 버전 5개를 보관한다. SUBMITTED 전환은 최종 제출 버전을 만든 뒤 그 버전 1개만 남긴다. 상태 변경과 버전 생성·정리는 한 트랜잭션이다.
+      x-implementation-status: planned-not-implemented
+      responses:
+        "200":
+          description: 정상 처리
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "500":
+          $ref: "#/components/responses/Error500"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: id
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationStatusUpdate"
+            example:
+              status: COMPLETED
   /tags:
     get:
       tags:
@@ -1225,7 +1269,7 @@ paths:
         - 문항
       summary: 문항·답변 저장
       operationId: put__questions__questionId
-      description: 문항 속성만 대체. 경험 연결은 별도 API로 변경. 초과 답변은 30000자 이내 저장 허용. position 충돌 409. CRLF 정규화 후 글자 수 계산.
+      description: 문항 속성만 대체하는 멱등 자동 저장 API. 클라이언트는 마지막 입력 후 2초 디바운스로 호출하고 화면 이동 시 즉시 호출한다. 경험 연결은 별도 API로 변경. 초과 답변은 30000자 이내 저장 허용. position 충돌 409. CRLF 정규화 후 글자 수 계산.
       x-implementation-status: planned-not-implemented
       responses:
         "200":
@@ -1284,6 +1328,231 @@ paths:
           in: path
           required: true
           description: questionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+  /questions/{questionId}/completion:
+    patch:
+      tags:
+        - 문항
+      summary: 문항 작성 상태 전환
+      operationId: patch__questions__questionId__completion
+      description: 사용자의 명시적 완료 동작. COMPLETED는 문항과 답변이 비어 있지 않고 답변이 제한 이하여야 한다. 완료 후 문항·답변·제한을 수정하면 PUT /questions/{questionId}가 DRAFT로 되돌린다.
+      x-implementation-status: planned-not-implemented
+      responses:
+        "200":
+          description: 정상 처리
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "500":
+          $ref: "#/components/responses/Error500"
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          description: questionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionCompletionUpdate"
+            example:
+              completionStatus: COMPLETED
+  /questions/{questionId}/versions:
+    get:
+      tags:
+        - 버전
+      summary: 문항 버전 목록
+      operationId: get__questions__questionId__versions
+      description: 최신 버전부터 반환. 답변 본문은 제외하고 버전 번호·종류·글자 수·저장 시각만 제공.
+      x-implementation-status: planned-not-implemented
+      responses:
+        "200":
+          description: 정상 처리
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuestionVersionSummary"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "500":
+          $ref: "#/components/responses/Error500"
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          description: questionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+    post:
+      tags:
+        - 버전
+      summary: 현재 문항 버전 저장
+      operationId: post__questions__questionId__versions
+      description: 현재 DB의 문항·답변·제한·참고 경험 ID를 MANUAL 스냅샷으로 저장. 요청 body는 없으며 마지막 버전과 내용이 같으면 409. DRAFT에서는 제출 버전 1개와 최근 작업 버전 20개를 보관한다.
+      x-implementation-status: planned-not-implemented
+      responses:
+        "201":
+          description: 정상 처리
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionVersion"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "500":
+          $ref: "#/components/responses/Error500"
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          description: questionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+  /questions/{questionId}/versions/{versionId}:
+    get:
+      tags:
+        - 버전
+      summary: 문항 버전 상세
+      operationId: get__questions__questionId__versions__versionId
+      description: 본인 문항의 저장된 버전 본문과 당시 참고 경험 ID를 조회.
+      x-implementation-status: planned-not-implemented
+      responses:
+        "200":
+          description: 정상 처리
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionVersion"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "500":
+          $ref: "#/components/responses/Error500"
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          description: questionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+        - name: versionId
+          in: path
+          required: true
+          description: versionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+    delete:
+      tags:
+        - 버전
+      summary: 직접 저장한 문항 버전 삭제
+      operationId: delete__questions__questionId__versions__versionId
+      description: MANUAL 버전만 삭제 가능. 작성 완료본과 제출 완료본 삭제 요청은 409. 다른 사용자 소유 또는 없는 버전은 404.
+      x-implementation-status: planned-not-implemented
+      responses:
+        "204":
+          description: 처리 완료. 응답 본문 없음
+        "400":
+          $ref: "#/components/responses/Error400"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "500":
+          $ref: "#/components/responses/Error500"
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          description: questionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+        - name: versionId
+          in: path
+          required: true
+          description: versionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+  /questions/{questionId}/versions/{versionId}/restore:
+    post:
+      tags:
+        - 버전
+      summary: 과거 문항 버전 복원
+      operationId: post__questions__questionId__versions__versionId__restore
+      description: DRAFT 자소서에서만 허용. 선택 버전을 현재 초안으로 덮어쓰고 문항 완료 상태를 DRAFT로 변경한다. 복원 직전 내용은 별도 버전으로 저장하지 않는다.
+      x-implementation-status: planned-not-implemented
+      responses:
+        "200":
+          description: 정상 처리
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "409":
+          $ref: "#/components/responses/Error409"
+        "500":
+          $ref: "#/components/responses/Error500"
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          description: questionId
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+        - name: versionId
+          in: path
+          required: true
+          description: versionId
           schema:
             type: integer
             format: int64
@@ -2022,6 +2291,11 @@ components:
           type: string
           maxLength: 5000
           nullable: true
+        overview:
+          type: string
+          maxLength: 5000
+          nullable: true
+          description: 경험의 전체 맥락, 사용 기술, 진행 방식을 자유롭게 정리한 개요.
         tags:
           type: array
           items:
@@ -2041,6 +2315,7 @@ components:
         - result
         - lesson
         - collaborationMemo
+        - overview
         - tags
       description: careerId는 본인 경력만 허용. 시작월 <= 종료월. 태그 양끝 공백 제거 및 중복 제거. 빈 필수 문자열 거부.
     Experience:
@@ -2101,6 +2376,11 @@ components:
           type: string
           maxLength: 5000
           nullable: true
+        overview:
+          type: string
+          maxLength: 5000
+          nullable: true
+          description: 경험의 전체 맥락, 사용 기술, 진행 방식을 자유롭게 정리한 개요.
         createdAt:
           type: string
           format: date-time
@@ -2127,6 +2407,7 @@ components:
         - result
         - lesson
         - collaborationMemo
+        - overview
         - createdAt
         - updatedAt
         - tags
@@ -2162,18 +2443,25 @@ components:
           type: string
           maxLength: 100
           minLength: 1
+      required:
+        - companyName
+        - jobTitle
+        - applicationPeriod
+      description: 자소서 기본 정보 쓰기 모델. 생성 상태는 DRAFT이며 상태 변경은 ApplicationStatusUpdate를 사용.
+    ApplicationStatusUpdate:
+      type: object
+      additionalProperties: false
+      properties:
         status:
           type: string
           enum:
             - DRAFT
             - COMPLETED
             - SUBMITTED
-          example: DRAFT
+          example: COMPLETED
       required:
-        - companyName
-        - jobTitle
-        - applicationPeriod
         - status
+      description: 인접 상태로만 전환. DRAFT → COMPLETED는 모든 문항 완료 필요. SUBMITTED 전환 시 최종 제출 버전 1개만 보관.
     Application:
       type: object
       additionalProperties: false
@@ -2244,7 +2532,7 @@ components:
         - answer
         - characterLimit
         - position
-      description: position은 지원 건 내 유일. prompt/answer 공백 허용. CRLF 정규화. 30000자 이내 초안은 제한 초과여도 저장.
+      description: position은 지원 건 내 유일. prompt/answer 공백 허용. CRLF 정규화. 30000자 이내 초안은 제한 초과여도 저장. 완료된 문항의 prompt, answer 또는 characterLimit가 바뀌면 completionStatus를 DRAFT로 변경.
     Question:
       type: object
       additionalProperties: false
@@ -2273,6 +2561,17 @@ components:
           type: integer
           minimum: 1
           maximum: 1000
+        completionStatus:
+          type: string
+          enum:
+            - DRAFT
+            - COMPLETED
+          example: DRAFT
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
         characterCount:
           type: integer
           minimum: 0
@@ -2305,11 +2604,123 @@ components:
         - answer
         - characterLimit
         - position
+        - completionStatus
+        - completedAt
         - characterCount
         - overLimit
         - experienceIds
         - createdAt
         - updatedAt
+    QuestionCompletionUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        completionStatus:
+          type: string
+          enum:
+            - DRAFT
+            - COMPLETED
+          example: COMPLETED
+      required:
+        - completionStatus
+      description: COMPLETED는 prompt와 answer가 비어 있지 않고 characterCount가 characterLimit 이하여야 한다.
+    QuestionVersionSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+        questionId:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+        versionNumber:
+          type: integer
+          minimum: 1
+        versionKind:
+          type: string
+          enum:
+            - MANUAL
+            - COMPLETED
+            - SUBMITTED
+        characterCount:
+          type: integer
+          minimum: 0
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - id
+        - questionId
+        - versionNumber
+        - versionKind
+        - characterCount
+        - createdAt
+    QuestionVersion:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+        questionId:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 9007199254740991
+        versionNumber:
+          type: integer
+          minimum: 1
+        versionKind:
+          type: string
+          enum:
+            - MANUAL
+            - COMPLETED
+            - SUBMITTED
+        prompt:
+          type: string
+          maxLength: 2000
+        answer:
+          type: string
+          maxLength: 30000
+        characterLimit:
+          type: integer
+          minimum: 1
+          maximum: 20000
+        experienceIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 9007199254740991
+        characterCount:
+          type: integer
+          minimum: 0
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - id
+        - questionId
+        - versionNumber
+        - versionKind
+        - prompt
+        - answer
+        - characterLimit
+        - experienceIds
+        - characterCount
+        - createdAt
     Error:
       type: object
       additionalProperties: false

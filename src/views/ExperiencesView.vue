@@ -87,7 +87,7 @@ const {
       </div>
       <small>{{ experience.period }}</small>
       <h3>{{ experience.title }}</h3>
-      <p>{{ experience.situation }}</p>
+      <p>{{ experience.overview || experience.situation }}</p>
       <div class="card-tags">
         <span v-for="tag in experience.tags" :key="tag"># {{ tag }}</span>
       </div>

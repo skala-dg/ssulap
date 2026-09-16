@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
-  "paths": 20,
-  "operations": 43,
-  "schemas": 23,
+  "paths": 25,
+  "operations": 50,
+  "schemas": 27,
   "tables": [
     "users",
     "profiles",
@@ -15,18 +15,18 @@
     "experience_tags",
     "applications",
     "essay_questions",
+    "question_versions",
     "question_experiences"
   ],
   "checks": [
     "OpenAPI schema and internal refs validated",
-    "DBML parsed and PostgreSQL DDL export succeeded",
-    "23 request/response examples checked for required fields/types/constraints",
-    "12 tables and key FK deletion directions checked",
-    "43 unique operationIds checked"
+    "Request/response examples checked for required fields/types/constraints",
+    "13 table declarations and key FK deletion directions checked",
+    "50 unique operationIds checked"
   ],
   "notVerified": [
     "Database not created; DDL not executed",
     "Backend not implemented; API responses not run",
-    "Swagger UI and dbdiagram.io visual import not performed"
+    "DBML parser export, Swagger UI, and dbdiagram.io visual import not performed after version-history changes"
   ]
 }
