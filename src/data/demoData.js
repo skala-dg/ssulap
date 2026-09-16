@@ -1,0 +1,123 @@
+export const createDemoExperiences = () => [
+  {
+    id: 1,
+    title: '의견의 차이를 하나의 방향으로',
+    type: '팀 프로젝트',
+    period: '2025.03 — 2025.06',
+    tags: ['협업', '소통'],
+    situation: '교내 서비스 개발 프로젝트에서 디자인 완성도와 개발 일정에 대한 의견이 달랐습니다.',
+    action: '팀원들이 중요하게 생각하는 기준을 듣고, 필수 화면과 추가 개선 항목을 함께 구분했습니다.',
+    result: '합의한 필수 기능을 발표 일정에 맞춰 완성했습니다.',
+    lesson: '의견을 설득하기 전에 서로의 우선순위를 이해하는 것이 중요했습니다.',
+    memo: '디자인 담당자의 우려를 구체적으로 듣고 나니 논의가 수월해졌습니다.',
+    career: '',
+  },
+  {
+    id: 2,
+    title: '반복되는 업무에서 개선의 실마리를 찾다',
+    type: '인턴',
+    period: '2025.07 — 2025.08',
+    tags: ['문제 해결', '주도성'],
+    situation: '매주 자료를 정리하는 과정에서 동일한 확인 작업이 반복됐습니다.',
+    action: '반복 항목을 정리하고 공통 확인 양식을 제안했습니다.',
+    result: '팀이 같은 기준으로 자료를 점검할 수 있게 됐습니다.',
+    lesson: '작은 불편을 관찰하는 것이 개선의 출발점입니다.',
+    memo: '동료가 자주 확인하는 항목을 먼저 물어봤습니다.',
+    career: '예시 기업',
+  },
+  {
+    id: 3,
+    title: '처음 맡은 행사, 끝까지 책임지다',
+    type: '동아리',
+    period: '2024.09 — 2024.11',
+    tags: ['책임감', '기획'],
+    situation: '신규 회원을 위한 교내 행사를 준비했습니다.',
+    action: '업무를 나누고 담당자별 진행 상황을 주기적으로 확인했습니다.',
+    result: '예정된 일정에 행사를 마쳤습니다.',
+    lesson: '진행 상황을 공유하는 과정이 중요했습니다.',
+    memo: '',
+    career: '',
+  },
+]
+
+export const createDemoCareers = () => [
+  {
+    id: 1,
+    company: '예시 기업',
+    employment: '인턴',
+    role: '서비스 운영팀',
+    start: '2025-07',
+    end: '2025-08',
+    current: false,
+    duties: '운영 자료 정리 및 팀 업무 지원',
+  },
+]
+
+export const createDemoApplications = () => [
+  {
+    id: 1,
+    company: '예시 기업',
+    role: '서비스 개발 인턴',
+    season: '2026 하반기',
+    status: '작성 중',
+    questions: [
+      {
+        text: '협업을 통해 문제를 해결한 경험을 알려주세요.',
+        limit: 700,
+        answer: '',
+        experienceIds: [],
+      },
+    ],
+  },
+  {
+    id: 2,
+    company: '샘플 테크',
+    role: '프론트엔드 개발',
+    season: '2026 하반기',
+    status: '작성 완료',
+    questions: [
+      {
+        text: '지원 직무와 관련된 경험을 소개해주세요.',
+        limit: 1000,
+        answer: '',
+        experienceIds: [],
+      },
+    ],
+  },
+]
+
+export const createEmptyProfile = () => ({
+  school: '',
+  major: '',
+  education: '졸업',
+  start: '',
+  end: '',
+  gpa: '',
+  scale: '4.5',
+  military: '미입력',
+  branch: '',
+  rank: '',
+  militaryStart: '',
+  militaryEnd: '',
+  veteran: '미입력',
+  disability: '미입력',
+  details: '',
+})
+
+export const PROFILE_LABELS = {
+  school: '학교',
+  major: '전공',
+  education: '학적 상태',
+  start: '입학 시기',
+  end: '졸업 시기',
+  gpa: '학점',
+  scale: '만점',
+  military: '병역 구분',
+  branch: '군별',
+  rank: '계급',
+  militaryStart: '복무 시작',
+  militaryEnd: '복무 종료',
+  veteran: '보훈 대상 여부',
+  disability: '장애 여부',
+  details: '추가 정보',
+}

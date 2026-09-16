@@ -1,0 +1,32 @@
+{
+  "openapi": "3.0.3",
+  "paths": 20,
+  "operations": 43,
+  "schemas": 23,
+  "tables": [
+    "users",
+    "profiles",
+    "educations",
+    "certifications",
+    "language_scores",
+    "careers",
+    "experiences",
+    "tags",
+    "experience_tags",
+    "applications",
+    "essay_questions",
+    "question_experiences"
+  ],
+  "checks": [
+    "OpenAPI schema and internal refs validated",
+    "DBML parsed and PostgreSQL DDL export succeeded",
+    "23 request/response examples checked for required fields/types/constraints",
+    "12 tables and key FK deletion directions checked",
+    "43 unique operationIds checked"
+  ],
+  "notVerified": [
+    "Database not created; DDL not executed",
+    "Backend not implemented; API responses not run",
+    "Swagger UI and dbdiagram.io visual import not performed"
+  ]
+}
