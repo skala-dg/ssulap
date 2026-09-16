@@ -11,9 +11,12 @@ import ApplicationEditorView from './views/ApplicationEditorView.vue'
 import ApplicationsView from './views/ApplicationsView.vue'
 import CareersView from './views/CareersView.vue'
 import ExperiencesView from './views/ExperiencesView.vue'
+import LoginView from './views/LoginView.vue'
 import ProfileView from './views/ProfileView.vue'
+import ReviewDetailView from './views/ReviewDetailView.vue'
+import ReviewsView from './views/ReviewsView.vue'
 
-const { page, toast, go } = useWorkspace()
+const { page, toast, currentUser, go } = useWorkspace()
 
 const views = {
   profile: ProfileView,
@@ -21,6 +24,8 @@ const views = {
   experiences: ExperiencesView,
   essays: ApplicationsView,
   editor: ApplicationEditorView,
+  reviews: ReviewsView,
+  review: ReviewDetailView,
 }
 
 const currentView = computed(() => views[page.value] ?? ExperiencesView)
@@ -69,7 +74,9 @@ onUnmounted(() => toolLifecycle.abort())
 </script>
 
 <template>
-  <div class="app-shell">
+  <LoginView v-if="!currentUser" />
+
+  <div v-else class="app-shell">
     <AppSidebar />
 
     <div class="main-shell">

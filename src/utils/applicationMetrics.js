@@ -24,10 +24,6 @@ export function getApplicationProgress(application) {
   const empty = questions.filter(
     (question) => getQuestionState(question) === 'empty',
   ).length
-  const totalCharacters = questions.reduce(
-    (sum, question) => sum + countCharacters(question.answer),
-    0,
-  )
   const connectedExperiences = new Set(
     questions.flatMap((question) => question.experienceIds ?? []),
   ).size
@@ -37,7 +33,6 @@ export function getApplicationProgress(application) {
     completed,
     overLimit,
     empty,
-    totalCharacters,
     connectedExperiences,
     percent: questions.length ? Math.round((completed / questions.length) * 100) : 0,
   }

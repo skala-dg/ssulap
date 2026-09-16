@@ -5,25 +5,24 @@ import {
   BriefcaseBusiness,
   Check,
   Copy,
+  MessageSquareText,
   Search,
   Sparkles,
-  UserRound,
 } from 'lucide-vue-next'
 import { useWorkspace } from '../../composables/useWorkspace.js'
 
 const {
   experiences,
   careers,
-  profile,
-  certifications,
-  languageScores,
-  courses,
+  users,
   activeApplication,
   currentQuestion,
+  reviewRequests,
+  reviewComments,
   recommendationVisible,
   recommendedExperiences,
-  profileLabels,
   notify,
+  go,
   recommendExperiences,
   showAllExperiences,
   connectExperience,
@@ -36,7 +35,7 @@ const resourceQuery = ref('')
 const tabs = [
   { key: 'experiences', label: '경험', icon: BookOpen },
   { key: 'careers', label: '경력', icon: BriefcaseBusiness },
-  { key: 'profile', label: '기본 이력', icon: UserRound },
+  { key: 'feedback', label: '검토 메모', icon: MessageSquareText },
 ]
 
 const visibleExperiences = computed(() => {
@@ -73,19 +72,31 @@ const visibleCareers = computed(() => {
   )
 })
 
-const baseProfileRows = computed(() =>
-  Object.entries(profile.value)
-    .filter(([, value]) => value && !['미입력'].includes(value))
-    .map(([key, value]) => ({ label: profileLabels[key] ?? key, value })),
-)
+const currentQuestionFeedback = computed(() => {
+  if (!activeApplication.value || !currentQuestion.value) return []
 
-const hasProfileResources = computed(
-  () =>
-    baseProfileRows.value.length ||
-    certifications.value.some((item) => item.name) ||
-    languageScores.value.some((item) => item.name) ||
-    courses.value.some((item) => item.subject),
-)
+  return reviewRequests.value
+    .filter(
+      (request) =>
+        request.applicationId === activeApplication.value.id &&
+        request.status === 'COMPLETED',
+    )
+    .flatMap((request) =>
+      reviewComments.value
+        .filter(
+          (comment) =>
+            comment.reviewRequestId === request.id &&
+            comment.questionId === currentQuestion.value.id,
+        )
+        .map((comment) => ({
+          ...comment,
+          reviewerName:
+            users.value.find((user) => user.id === request.reviewerId)?.name ?? '검토자',
+          completedAt: request.completedAt,
+        })),
+    )
+    .sort((left, right) => new Date(right.completedAt) - new Date(left.completedAt))
+})
 
 function selectTab(tab) {
   activeTab.value = tab
@@ -128,20 +139,13 @@ function copyCareer(career) {
   ])
 }
 
-function copyBaseProfile() {
-  copyResource(
-    '기본 이력',
-    baseProfileRows.value.map(({ label, value }) => `${label}: ${value}`),
-  )
-}
 </script>
 
 <template>
   <aside class="resource-drawer" aria-label="자소서 참고 자료 서랍">
     <div class="resource-heading">
       <div>
-        <span class="overline">REFERENCE DRAWER</span>
-        <h2>자료 서랍</h2>
+        <h2>참고 자료</h2>
       </div>
       <BookOpen :size="20" />
     </div>
@@ -160,7 +164,7 @@ function copyBaseProfile() {
       </button>
     </div>
 
-    <label v-if="activeTab !== 'profile'" class="resource-search">
+    <label v-if="activeTab !== 'feedback'" class="resource-search">
       <Search :size="15" />
       <input
         v-model="resourceQuery"
@@ -183,7 +187,7 @@ function copyBaseProfile() {
           모든 경험 보기
         </button>
       </div>
-      <small class="simulation">문항과 경험 태그를 비교하는 시연용 추천입니다.</small>
+      <small class="simulation">문항과 경험 태그를 기준으로 관련 경험을 추천합니다.</small>
 
       <p v-if="!visibleExperiences.length" class="resource-empty">
         {{ recommendationVisible ? '문항과 일치하는 경험이 없습니다.' : '조건에 맞는 경험이 없습니다.' }}
@@ -257,59 +261,26 @@ function copyBaseProfile() {
     </template>
 
     <template v-else>
-      <div class="profile-resource-heading">
-        <p class="resource-guide">학력과 자격 정보를 답변에 참고할 수 있습니다.</p>
-        <button class="icon-action" type="button" @click="copyBaseProfile">
-          <Copy :size="14" />기본 정보 복사
-        </button>
-      </div>
-
-      <p v-if="!hasProfileResources" class="resource-empty">
-        내 기본 이력에서 정보를 먼저 등록해주세요.
+      <p class="resource-guide">
+        현재 문항에 대해 검토 완료된 메모만 표시합니다. 메모를 참고하면서 답변을 수정할 수 있습니다.
       </p>
 
-      <dl v-if="baseProfileRows.length" class="profile-resource-list">
-        <template v-for="row in baseProfileRows" :key="row.label">
-          <dt>{{ row.label }}</dt>
-          <dd>{{ row.value }}</dd>
-        </template>
-      </dl>
+      <p v-if="!currentQuestionFeedback.length" class="resource-empty">
+        현재 문항에 받은 검토 메모가 없습니다.
+      </p>
 
-      <section v-if="certifications.some((item) => item.name)" class="resource-group">
-        <h3>자격증</h3>
-        <button
-          v-for="item in certifications.filter((certificate) => certificate.name)"
-          :key="item.id"
-          type="button"
-          @click="copyResource('자격증', [item.name, item.issuer, item.acquiredOn])"
-        >
-          <b>{{ item.name }}</b><span>{{ item.issuer || '발급기관 미입력' }}</span>
-        </button>
-      </section>
+      <article
+        v-for="feedback in currentQuestionFeedback"
+        :key="feedback.id"
+        class="resource-card feedback-card"
+      >
+        <small>{{ feedback.reviewerName }}님의 검토</small>
+        <p>{{ feedback.content }}</p>
+      </article>
 
-      <section v-if="languageScores.some((item) => item.name)" class="resource-group">
-        <h3>어학 성적</h3>
-        <button
-          v-for="item in languageScores.filter((score) => score.name)"
-          :key="item.id"
-          type="button"
-          @click="copyResource('어학 성적', [item.name, item.score, item.testedOn])"
-        >
-          <b>{{ item.name }}</b><span>{{ item.score || '점수 미입력' }}</span>
-        </button>
-      </section>
-
-      <section v-if="courses.some((item) => item.subject)" class="resource-group">
-        <h3>수강 과목</h3>
-        <button
-          v-for="item in courses.filter((course) => course.subject)"
-          :key="item.id"
-          type="button"
-          @click="copyResource('수강 과목', [item.subject, item.majorName, item.grade])"
-        >
-          <b>{{ item.subject }}</b><span>{{ item.grade || '성적 미입력' }}</span>
-        </button>
-      </section>
+      <button class="text-button feedback-history-link" type="button" @click="go('reviews')">
+        전체 검토 요청과 메모 보기
+      </button>
     </template>
   </aside>
 </template>

@@ -1,7 +1,6 @@
 <script setup>
 import {
   ArrowUpRight,
-  BookOpen,
   ChevronRight,
   FolderOpen,
   Plus,
@@ -23,9 +22,8 @@ const {
 <template>
   <div class="page-heading">
     <div>
-      <div class="eyebrow">MY EXPERIENCES</div>
-      <h1>해온 일들이, 나의 이야기가 되도록<span>.</span></h1>
-      <p>작은 시도부터 함께 만든 결과까지. 잊기 전에 내 경험을 담아보세요.</p>
+      <h1>경험</h1>
+      <p>프로젝트와 활동에서 맡은 일과 결과를 기록합니다.</p>
     </div>
     <button class="primary" @click="editExperience()">
       <Plus :size="18" />경험 기록하기
@@ -34,11 +32,11 @@ const {
 
   <section class="overview">
     <div>
-      <span class="overline">차곡차곡 모인 경험</span>
+      <span class="overline">등록한 경험</span>
       <strong>{{ String(experiences.length).padStart(2, '0') }}<small>개의 이야기</small></strong>
     </div>
     <div>
-      <span class="overline">경험 속 나의 키워드</span>
+      <span class="overline">주요 태그</span>
       <div class="keywords">
         <span
           v-for="keyword in [...new Set(experiences.flatMap((item) => item.tags))].slice(0, 5)"
@@ -47,10 +45,6 @@ const {
           {{ keyword }}
         </span>
       </div>
-    </div>
-    <div class="overview-tip">
-      <BookOpen :size="24" />
-      <p>멋진 결과가 아니어도 괜찮아요.<br /><b>내가 한 행동에서 이야기는 시작돼요.</b></p>
     </div>
   </section>
 
@@ -96,8 +90,8 @@ const {
 
     <button class="add-card" @click="editExperience()">
       <span><Plus :size="24" /></span>
-      <b>아직 꺼내지 않은 이야기가 있나요?</b>
-      <p>새로운 경험을 서랍에 담아보세요.</p>
+      <b>경험 추가</b>
+      <p>프로젝트, 인턴, 동아리 활동 등을 기록합니다.</p>
     </button>
   </div>
 

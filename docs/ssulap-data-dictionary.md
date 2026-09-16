@@ -2,7 +2,13 @@
 
 DBML은 저장 구조, 아래 스키마는 API 필드를 설명합니다. 타입·nullable·최대 길이는 OpenAPI와 같은 자료에서 생성했습니다.
 
-선택 필드도 PUT에서 키는 필수이며 미입력 값은 null입니다. user_id는 요청에 없고 서버가 결정합니다. createdAt/updatedAt은 서버 생성 값입니다.
+선택 필드도 PUT에서 키는 필수이며 미입력 값은 null입니다. 소유자 user_id는 요청에 없고 로그인 세션의 현재 사용자로 서버가 결정합니다. 검토자 ID처럼 기능상 선택이 필요한 관계만 요청에 포함합니다. createdAt/updatedAt은 서버 생성 값입니다.
+
+## LoginRequest
+
+| 필드 | 타입 | null | 제약·허용값 |
+|---|---|---|---|
+| userId | integer int64 | 불가 | 로그인할 등록 사용자 ID |
 
 ## ProfileWrite
 
@@ -28,6 +34,22 @@ DBML은 저장 구조, 아래 스키마는 API 필드를 설명합니다. 타입
 | endMonth | string  | 허용 | maxLength: 7; pattern: ^\d{4}-(0[1-9]|1[0-2])$ |
 | gpa | number  | 허용 | minimum: 0; maximum: 100 |
 | gpaScale | number  | 허용 | enum: [4.0, 4.3, 4.5, 5.0, 100.0, None] |
+
+## CourseWrite
+
+| 필드 | 타입 | null | 제약·허용값 |
+|---|---|---|---|
+| majorName | string | 허용 | maxLength: 100 |
+| studyYear | integer | 허용 | 1900~2100 |
+| semester | string | 허용 | enum: ['FIRST_SEMESTER', 'SECOND_SEMESTER', 'SUMMER', 'WINTER'] |
+| subjectName | string | 불가 | minLength: 1; maxLength: 150 |
+| subjectType | string | 불가 | enum: ['MAJOR', 'GENERAL', 'OTHER'] |
+| credits | number | 허용 | 0~30; 0.5 단위 |
+| grade | string | 허용 | maxLength: 10 |
+| retaken | boolean | 불가 | 재수강 여부 |
+| position | integer | 불가 | 1~1000; 같은 학력 내 중복 불가 |
+
+`Course` 응답에는 `id`, `educationId`, `createdAt`, `updatedAt`이 추가됩니다. 수강 과목은 학력별로 position 오름차순, id 오름차순으로 조회합니다.
 
 ## CertificationWrite
 
@@ -123,6 +145,56 @@ DBML은 저장 구조, 아래 스키마는 API 필드를 설명합니다. 타입
 | characterCount | integer | 불가 | 응답 계산값 |
 | createdAt | date-time | 불가 | 서버 생성 |
 
+## ReviewRequestCreate
+
+| 필드 | 타입 | null | 제약·허용값 |
+|---|---|---|---|
+| reviewerId | integer int64 | 불가 | 현재 사용자와 달라야 하며 존재하는 등록 사용자 |
+
+## ReviewRequest
+
+| 필드 | 타입 | null | 제약·허용값 |
+|---|---|---|---|
+| id | integer int64 | 불가 | 서버 생성 |
+| applicationId | integer int64 | 불가 | 요청자 소유의 COMPLETED 자소서 |
+| requesterId | integer int64 | 불가 | 자소서 소유자 |
+| requesterName | string | 불가 | 조회 시 조합, maxLength: 50 |
+| reviewerId | integer int64 | 불가 | 지정된 검토자 |
+| reviewerName | string | 불가 | 조회 시 조합, maxLength: 50 |
+| status | string | 불가 | enum: ['REQUESTED', 'COMPLETED'] |
+| requestedAt | date-time | 불가 | 서버 생성 |
+| completedAt | date-time | 허용 | COMPLETED일 때 서버 생성 |
+
+## ReviewCommentWrite
+
+| 필드 | 타입 | null | 제약·허용값 |
+|---|---|---|---|
+| content | string | 불가 | minLength: 1; maxLength: 5000; 양끝 공백 제거 후 빈 값 금지 |
+
+## ReviewComment
+
+| 필드 | 타입 | null | 제약·허용값 |
+|---|---|---|---|
+| id | integer int64 | 불가 | 서버 생성 |
+| reviewRequestId | integer int64 | 불가 | REQUESTED 상태이며 현재 사용자가 지정 검토자여야 함 |
+| questionId | integer int64 | 불가 | 검토 요청 자소서에 포함된 문항 |
+| authorId | integer int64 | 불가 | 지정 검토자, 서버 결정 |
+| authorName | string | 불가 | 조회 시 조합, maxLength: 50 |
+| content | string | 불가 | maxLength: 5000 |
+| createdAt | date-time | 불가 | 서버 생성 |
+| updatedAt | date-time | 불가 | 서버 관리 |
+
+## ReviewFeedback
+
+| 필드 | 타입 | null | 제약·허용값 |
+|---|---|---|---|
+| reviewRequestId | integer int64 | 불가 | COMPLETED 검토 요청 |
+| questionId | integer int64 | 불가 | 메모 대상 문항 |
+| reviewerId | integer int64 | 불가 | 검토자 |
+| reviewerName | string | 불가 | maxLength: 50 |
+| content | string | 불가 | maxLength: 5000 |
+| completedAt | date-time | 불가 | 검토 완료 시각 |
+
 ## 응답 전용 필드
 
 - 일반 엔터티: id, createdAt, updatedAt. userId는 응답에도 노출하지 않음.
@@ -131,5 +203,7 @@ DBML은 저장 구조, 아래 스키마는 API 필드를 설명합니다. 타입
 - ApplicationDetail: questions 배열을 조합.
 - Question: applicationId, completionStatus, completedAt, experienceIds, characterCount, overLimit. characterCount와 overLimit는 저장하지 않는 계산값.
 - QuestionVersionSummary: id, questionId, versionNumber, versionKind, characterCount, createdAt. 목록 응답에는 답변 본문을 포함하지 않음.
+- ReviewDetail: reviewRequest, 읽기 전용 ApplicationDetail, ReviewComment 배열을 조합. 요청자와 지정 검토자만 조회.
+- ReviewFeedback: 자소서 소유자에게 COMPLETED 검토 메모만 문항별로 제공. 진행 중 메모는 제외.
 - Resume: profile 및 educations/certifications/languageScores 배열을 조합.
 - Error: code, message, fieldErrors, timestamp. 오류 timestamp는 DB 필드가 아님.

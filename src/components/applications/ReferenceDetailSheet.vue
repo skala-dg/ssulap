@@ -87,7 +87,7 @@ async function copyVersionAnswer() {
       </template>
 
       <template v-else-if="referenceDetail.type === 'versions'">
-        <span class="eyebrow">ANSWER HISTORY</span>
+        <span class="eyebrow">답변 기록</span>
         <h2>버전 기록</h2>
         <p class="reference-period">자동 저장과 별도로 직접 남긴 답변 기록입니다.</p>
 

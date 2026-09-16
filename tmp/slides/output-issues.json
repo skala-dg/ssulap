@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "presentation": {
+    "id": "1Lxi0YppDUbL3cD80rkYx2Ee0K6rAooggsBVd1sRQcpQ",
+    "title": "써랍-개요",
+    "revisionId": "h_laoV10OL7u3A",
+    "slideCount": 12
+  },
+  "snapshotSha256": "1bb4e0a1367e57755825320d3d7d58bbe9d0d0030945f8083cf7a23f1821d238",
+  "summary": {
+    "totalIssues": 0,
+    "reportedIssues": 0,
+    "truncated": false,
+    "bySeverity": {},
+    "byCode": {}
+  },
+  "issues": []
+}

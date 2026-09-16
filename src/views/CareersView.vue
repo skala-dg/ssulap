@@ -8,9 +8,8 @@ const { careers, editCareer } = useWorkspace()
 <template>
   <div class="page-heading">
     <div>
-      <div class="eyebrow">MY CAREER</div>
-      <h1>일하며 쌓아온 시간<span>.</span></h1>
-      <p>인턴부터 첫 직장까지, 나의 경력을 정리해보세요.</p>
+      <h1>경력</h1>
+      <p>회사별 근무 기간과 담당 업무를 관리합니다.</p>
     </div>
     <button class="primary" @click="editCareer()">
       <Plus :size="18" />경력 추가

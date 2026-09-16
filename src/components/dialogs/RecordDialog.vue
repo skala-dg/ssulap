@@ -44,7 +44,6 @@ const experienceFields = [
       </template>
 
       <form v-else @submit.prevent="submitModal">
-        <div class="eyebrow">YOUR NEXT STORY</div>
         <h2>{{ modalTitle }}</h2>
 
         <template v-if="modal === 'experience'">

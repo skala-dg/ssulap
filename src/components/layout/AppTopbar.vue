@@ -11,6 +11,8 @@ const pageLabels = {
   experiences: '내 경험',
   essays: '자소서 보관함',
   editor: '자소서 작성',
+  reviews: '검토 요청함',
+  review: '자소서 검토',
 }
 
 const currentLabel = computed(() => pageLabels[page.value])
@@ -19,6 +21,5 @@ const currentLabel = computed(() => pageLabels[page.value])
 <template>
   <header class="topbar">
     <span>나의 써랍 <ChevronRight :size="14" /> {{ currentLabel }}</span>
-    <!-- <span class="demo-badge">프론트엔드 미리보기 · 예시 데이터</span> -->
   </header>
 </template>

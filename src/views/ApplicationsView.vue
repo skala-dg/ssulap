@@ -9,9 +9,8 @@ const { query, filteredApplications, newApplication, openApplication } = useWork
 <template>
   <div class="page-heading">
     <div>
-      <div class="eyebrow">MY APPLICATIONS</div>
-      <h1>다음 기회를 준비하는 서랍<span>.</span></h1>
-      <p>회사마다 다른 질문에, 나의 경험으로 답해보세요.</p>
+      <h1>자소서</h1>
+      <p>회사별 문항과 답변을 작성하고 관리합니다.</p>
     </div>
     <button class="primary" @click="newApplication">
       <Plus :size="18" />새 자소서
@@ -47,7 +46,6 @@ const { query, filteredApplications, newApplication, openApplication } = useWork
             <span :style="{ width: `${getApplicationProgress(application).percent}%` }"></span>
           </div>
           <div class="application-meta">
-            <span>{{ getApplicationProgress(application).totalCharacters.toLocaleString() }}자</span>
             <span>경험 {{ getApplicationProgress(application).connectedExperiences }}개</span>
             <span v-if="getApplicationProgress(application).empty">
               빈 문항 {{ getApplicationProgress(application).empty }}개
@@ -59,7 +57,16 @@ const { query, filteredApplications, newApplication, openApplication } = useWork
           </div>
         </div>
       </div>
-      <span class="pill">{{ application.status }}</span>
+      <span
+        class="pill"
+        :class="{
+          'is-draft': application.status === '작성 중',
+          'is-completed': application.status === '작성 완료',
+          'is-submitted': application.status === '제출 완료',
+        }"
+      >
+        {{ application.status }}
+      </span>
       <ChevronRight />
     </button>
 

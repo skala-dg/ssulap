@@ -1,6 +1,7 @@
 export const createDemoExperiences = () => [
   {
     id: 1,
+    userId: 1,
     title: '의견의 차이를 하나의 방향으로',
     type: '팀 프로젝트',
     period: '2025.03 — 2025.06',
@@ -15,6 +16,7 @@ export const createDemoExperiences = () => [
   },
   {
     id: 2,
+    userId: 1,
     title: '반복되는 업무에서 개선의 실마리를 찾다',
     type: '인턴',
     period: '2025.07 — 2025.08',
@@ -29,6 +31,7 @@ export const createDemoExperiences = () => [
   },
   {
     id: 3,
+    userId: 1,
     title: '처음 맡은 행사, 끝까지 책임지다',
     type: '동아리',
     period: '2024.09 — 2024.11',
@@ -46,6 +49,7 @@ export const createDemoExperiences = () => [
 export const createDemoCareers = () => [
   {
     id: 1,
+    userId: 1,
     company: '예시 기업',
     employment: '인턴',
     role: '서비스 운영팀',
@@ -59,6 +63,7 @@ export const createDemoCareers = () => [
 export const createDemoApplications = () => [
   {
     id: 1,
+    userId: 1,
     company: '예시 기업',
     role: '서비스 개발 인턴',
     season: '2026 하반기',
@@ -80,6 +85,7 @@ export const createDemoApplications = () => [
   },
   {
     id: 2,
+    userId: 1,
     company: '샘플 테크',
     role: '프론트엔드 개발',
     season: '2026 하반기',

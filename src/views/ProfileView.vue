@@ -1,25 +1,37 @@
 <script setup>
-import { Check, Copy } from 'lucide-vue-next'
+import { Check, Pencil } from 'lucide-vue-next'
 import CertificationsSection from '../components/profile/CertificationsSection.vue'
 import CourseList from '../components/profile/CourseList.vue'
 import LanguageScoresSection from '../components/profile/LanguageScoresSection.vue'
 import { useWorkspace } from '../composables/useWorkspace.js'
 
-const { profile, profileLabels, copyProfile, saveProfileSection } = useWorkspace()
+const {
+  profile,
+  profileLabels,
+  profileSectionLocks,
+  saveProfileSection,
+  editProfileSection,
+} = useWorkspace()
 
 const educationFields = ['school', 'major', 'education', 'start', 'end', 'gpa', 'scale']
 const militaryFields = ['military', 'branch', 'rank', 'militaryStart', 'militaryEnd']
 const supportFields = ['veteran', 'disability', 'details']
+
+function handleMilitaryChange() {
+  if (profile.value.military !== '해당 없음') return
+  profile.value.branch = ''
+  profile.value.rank = ''
+  profile.value.militaryStart = ''
+  profile.value.militaryEnd = ''
+}
 </script>
 
 <template>
   <div class="page-heading">
     <div>
-      <div class="eyebrow">MY PROFILE</div>
-      <h1>한 번 정리하고, 필요할 때 꺼내요<span>.</span></h1>
-      <p>지원할 때마다 찾던 기본 이력을 한곳에서 관리하세요.</p>
+      <h1>기본 이력</h1>
+      <p>지원서에 자주 사용하는 정보를 구역별로 저장하고 관리합니다.</p>
     </div>
-    <button class="secondary" @click="copyProfile"><Copy :size="17" />이력 복사</button>
   </div>
 
   <form class="profile-form" @submit.prevent>
@@ -34,7 +46,10 @@ const supportFields = ['veteran', 'disability', 'details']
       <div class="form-grid">
         <label v-for="field in educationFields" :key="field">
           {{ profileLabels[field] }}
-          <select v-if="field === 'education'" v-model="profile[field]">
+          <div v-if="profileSectionLocks.education" class="readonly-field">
+            {{ profile[field] || '미입력' }}
+          </div>
+          <select v-else-if="field === 'education'" v-model="profile[field]">
             <option v-for="value in ['재학', '휴학', '졸업 예정', '졸업']" :key="value">
               {{ value }}
             </option>
@@ -51,8 +66,16 @@ const supportFields = ['veteran', 'disability', 'details']
       <CourseList />
 
       <div class="section-actions">
-        <button class="primary" type="button" @click="saveProfileSection('학력')">
+        <button
+          v-if="!profileSectionLocks.education"
+          class="primary"
+          type="button"
+          @click="saveProfileSection('education', '학력')"
+        >
           <Check :size="17" />학력 저장
+        </button>
+        <button v-else class="secondary" type="button" @click="editProfileSection('education')">
+          <Pencil :size="16" />학력 수정
         </button>
       </div>
     </section>
@@ -65,7 +88,14 @@ const supportFields = ['veteran', 'disability', 'details']
       <div class="form-grid">
         <label v-for="field in militaryFields" :key="field">
           {{ profileLabels[field] }}
-          <select v-if="field === 'military'" v-model="profile[field]">
+          <div v-if="profileSectionLocks.military" class="readonly-field">
+            {{ profile[field] || '미입력' }}
+          </div>
+          <select
+            v-else-if="field === 'military'"
+            v-model="profile[field]"
+            @change="handleMilitaryChange"
+          >
             <option
               v-for="value in ['미입력', '해당 없음', '미필', '복무 중', '군필', '면제']"
               :key="value"
@@ -77,13 +107,22 @@ const supportFields = ['veteran', 'disability', 'details']
             v-else
             v-model="profile[field]"
             :type="['militaryStart', 'militaryEnd'].includes(field) ? 'month' : 'text'"
+            :disabled="profile.military === '해당 없음'"
             :placeholder="`${profileLabels[field]} 입력`"
           />
         </label>
       </div>
       <div class="section-actions">
-        <button class="primary" type="button" @click="saveProfileSection('병역사항')">
+        <button
+          v-if="!profileSectionLocks.military"
+          class="primary"
+          type="button"
+          @click="saveProfileSection('military', '병역사항')"
+        >
           <Check :size="17" />병역사항 저장
+        </button>
+        <button v-else class="secondary" type="button" @click="editProfileSection('military')">
+          <Pencil :size="16" />병역사항 수정
         </button>
       </div>
     </section>
@@ -94,7 +133,10 @@ const supportFields = ['veteran', 'disability', 'details']
       <div class="form-grid">
         <label v-for="field in supportFields" :key="field">
           {{ profileLabels[field] }}
-          <select v-if="['veteran', 'disability'].includes(field)" v-model="profile[field]">
+          <div v-if="profileSectionLocks.support" class="readonly-field">
+            {{ profile[field] || '미입력' }}
+          </div>
+          <select v-else-if="['veteran', 'disability'].includes(field)" v-model="profile[field]">
             <option v-for="value in ['미입력', '대상', '비대상']" :key="value">
               {{ value }}
             </option>
@@ -107,8 +149,16 @@ const supportFields = ['veteran', 'disability', 'details']
         </label>
       </div>
       <div class="section-actions">
-        <button class="primary" type="button" @click="saveProfileSection('보훈·장애사항')">
+        <button
+          v-if="!profileSectionLocks.support"
+          class="primary"
+          type="button"
+          @click="saveProfileSection('support', '보훈·장애사항')"
+        >
           <Check :size="17" />보훈·장애사항 저장
+        </button>
+        <button v-else class="secondary" type="button" @click="editProfileSection('support')">
+          <Pencil :size="16" />보훈·장애사항 수정
         </button>
       </div>
     </section>

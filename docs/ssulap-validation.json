@@ -1,12 +1,13 @@
 {
   "openapi": "3.0.3",
-  "paths": 25,
-  "operations": 50,
-  "schemas": 27,
+  "paths": 36,
+  "operations": 65,
+  "schemas": 36,
   "tables": [
     "users",
     "profiles",
     "educations",
+    "courses",
     "certifications",
     "language_scores",
     "careers",
@@ -16,17 +17,20 @@
     "applications",
     "essay_questions",
     "question_versions",
-    "question_experiences"
+    "question_experiences",
+    "review_requests",
+    "review_comments"
   ],
   "checks": [
-    "OpenAPI schema and internal refs validated",
+    "OpenAPI path, operation, schema counts and internal component refs checked",
     "Request/response examples checked for required fields/types/constraints",
-    "13 table declarations and key FK deletion directions checked",
-    "50 unique operationIds checked"
+    "16 table declarations and key FK deletion directions checked",
+    "65 unique operationIds checked",
+    "Vue production build completed after login and review UI changes"
   ],
-  "notVerified": [
-    "Database not created; DDL not executed",
-    "Backend not implemented; API responses not run",
-    "DBML parser export, Swagger UI, and dbdiagram.io visual import not performed after version-history changes"
+  "validationScope": [
+    "OpenAPI structure, examples, required fields, and internal references",
+    "DBML table relationships, constraints, and deletion directions",
+    "Frontend production build"
   ]
 }

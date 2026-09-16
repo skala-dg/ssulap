@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ChevronUp,
   History,
+  MessageSquarePlus,
   Plus,
   RotateCcw,
   Save,
@@ -26,6 +27,8 @@ import {
 
 const {
   activeApplication,
+  users,
+  currentUser,
   questionIndex,
   currentQuestion,
   experiences,
@@ -46,12 +49,17 @@ const {
   saveQuestionVersion,
   openVersionHistory,
   openReferenceDetail,
+  requestApplicationReview,
 } = useWorkspace()
 
 const progress = computed(() => getApplicationProgress(activeApplication.value))
 const lastSavedLabel = computed(() => formatSavedAt(lastSavedAt.value))
 const editorLocked = computed(() => activeApplication.value?.status !== '작성 중')
 const versionCount = computed(() => currentQuestion.value?.versions?.length ?? 0)
+const reviewers = computed(() =>
+  users.value.filter((user) => user.id !== currentUser.value?.id),
+)
+const selectedReviewerId = ref('')
 
 const questionStateLabels = {
   empty: '빈 문항',
@@ -73,7 +81,6 @@ const questionStateLabels = {
         <h1>{{ activeApplication.company }}</h1>
         <div class="editor-progress-summary">
           <span>{{ progress.completed }} / {{ progress.total }}문항 작성</span>
-          <span>{{ progress.totalCharacters.toLocaleString() }}자</span>
           <span>연결 경험 {{ progress.connectedExperiences }}개</span>
           <span v-if="progress.overLimit" class="meta-error">초과 {{ progress.overLimit }}개</span>
         </div>
@@ -87,7 +94,16 @@ const questionStateLabels = {
           </div>
         </div>
         <div class="actions">
-          <span class="pill application-status">{{ activeApplication.status }}</span>
+          <span
+            class="pill application-status"
+            :class="{
+              'is-draft': activeApplication.status === '작성 중',
+              'is-completed': activeApplication.status === '작성 완료',
+              'is-submitted': activeApplication.status === '제출 완료',
+            }"
+          >
+            {{ activeApplication.status }}
+          </span>
           <button class="secondary" type="button" @click="openVersionHistory">
             <History :size="16" />버전 기록 {{ versionCount }}
           </button>
@@ -108,6 +124,22 @@ const questionStateLabels = {
             <CheckCircle2 :size="16" />자소서 작성 완료
           </button>
           <template v-else-if="activeApplication.status === '작성 완료'">
+            <div class="review-request-control">
+              <select v-model="selectedReviewerId" aria-label="검토자 선택">
+                <option value="">검토자 선택</option>
+                <option v-for="reviewer in reviewers" :key="reviewer.id" :value="reviewer.id">
+                  {{ reviewer.name }}
+                </option>
+              </select>
+              <button
+                class="secondary"
+                type="button"
+                :disabled="!selectedReviewerId"
+                @click="requestApplicationReview(selectedReviewerId)"
+              >
+                <MessageSquarePlus :size="16" />검토 요청
+              </button>
+            </div>
             <button class="secondary" type="button" @click="changeApplicationStatus('작성 중')">
               <RotateCcw :size="16" />작성 다시 시작
             </button>
